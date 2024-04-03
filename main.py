@@ -1,6 +1,7 @@
+import os
 import streamlit as st
 import plotly.express as px
-import backend import get_data
+from  backend import get_data
 # st.set_page_config(layout="wide")
 
 st.title("Weather Forecast for the Next days")
@@ -13,9 +14,26 @@ option = st.selectbox("Select data to view",
 
 st.subheader(f"{option} for the next {days} days in {place}")
 
-data = get_data(place, days, option)
 
-d, t = get_data(days)
+if place:
+    try:
+        # Get the temperature/sky data
+        filtered_data = get_data(place, days)
 
-figure = px.line(x=d, y=t, labels={"x": "Date", "y": "Temperature (C)"})
-st.plotly_chart(figure)
+        # Create a temperature plot\
+        if option == "Temperature":
+            temperatures = [dict["main"]["temp"]/10 for dict in filtered_data]
+            dates = [dict["dt_txt"] for dict in filtered_data]
+            figure = px.line(x=dates, y=temperatures, labels={"x": "Date", "y": "Temperature (C)"})
+            st.plotly_chart(figure)
+
+        if option == "Sky":
+            images = {"Clear": "images/clear.png", "Clouds": "images/cloud.png", "Rain": "images/rain.png",
+                      "Snow": "images/snow.png"}
+            sky_conditions = [dict["weather"][0]["main"] for dict in filtered_data]
+            image_paths = [images[condition] for condition in sky_conditions]
+            st.image(image_paths, width=115)
+            # name_image = [os.path.splitext(i)[0] for i in "images"]
+
+    except KeyError:
+        st.write("That city does not exist !")
